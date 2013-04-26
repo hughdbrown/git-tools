@@ -44,6 +44,10 @@ ERRORS = [
 ]
 
 
+def message(msg):
+    print(msg, file=sys.stderr)
+
+
 def sha1_file(filename):
     with open(filename) as f:
         return sha1(f.read()).hexdigest()
@@ -52,7 +56,7 @@ def sha1_file(filename):
 def run_git(fullpath, comment, dryrun):
     cmd = ["git", "commit", fullpath, "-m", "{0}: {1}".format(fullpath, comment)]
     if dryrun:
-        print(" ".join(cmd), file=sys.stderr)
+        message(" ".join(cmd))
     else:
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
         _, errors = p.communicate()
@@ -74,7 +78,7 @@ def get_filelist(start_dir, recurse, ext):
 
 def loop_params(file_list):
     for error_no, error_comment in ERRORS:
-        print("{0} {1}".format(error_no, error_comment), file=sys.stderr)
+        message("{0} {1}".format(error_no, error_comment))
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
             yield (fullpath, hash_before, error_no, error_comment)
@@ -86,7 +90,7 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False, verbose=F
     for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
         cmd = ["autopep8", "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
         if verbose:
-            print(" ".join(cmd), file=sys.stderr)
+            message(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
         output, errors = p.communicate()
         if p.returncode:
@@ -94,7 +98,7 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False, verbose=F
         elif hash_before != sha1_file(fullpath):
             # I can't tell if autopep8 has modified a file from the return code,
             # so I do it the hard way...
-            print(output, file=sys.stderr)
+            message(output)
             run_git(fullpath, error_comment, dryrun)
             i += 1
     print("# {0} files scanned/modified".format(i), file=sys.stderr)
@@ -120,9 +124,9 @@ def test_for_required_binaries():
     needed_binaries = ["git", "autopep8", "pep8"]
     found = [(binary, binary_in_path(binary)) for binary in needed_binaries]
     if not all(found_binary for _, found_binary in found):
-        print("Certain additional binaries are required to run:")
+        message("Certain additional binaries are required to run:")
         for binary, found_binary in found:
-            print("\t{0}: {1}".format(binary, "Found" if found_binary else "Not found"))
+            message("\t{0}: {1}".format(binary, "Found" if found_binary else "Not found"))
         sys.exit(1)
 
 
