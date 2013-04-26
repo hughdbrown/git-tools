@@ -53,8 +53,11 @@ def sha1_file(filename):
         return sha1(f.read()).hexdigest()
 
 
-def run_git(fullpath, comment, dryrun):
+def run_git(fullpath, comment, dryrun, author=None):
     cmd = ["git", "commit", fullpath, "-m", "{0}: {1}".format(fullpath, comment)]
+    if author:
+        cmd += ["--author", author]
+
     if dryrun:
         message(" ".join(cmd))
     else:
@@ -84,11 +87,11 @@ def loop_params(file_list):
             yield (fullpath, hash_before, error_no, error_comment)
 
 
-def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False, verbose=False):
+def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False, verbose=False, autopep8=None, author=None):
     file_list = get_filelist(start_dir, recurse, ext)
     i = 0
     for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
-        cmd = ["autopep8", "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
+        cmd = [autopep8, "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
         if verbose:
             message(" ".join(cmd))
         p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
@@ -112,6 +115,8 @@ def option_parser():
         make_option('-d', '--dryrun', dest='dryrun', action='store_true', default=False),
         make_option('-s', '--startdir', dest='startdir', action='store', default="."),
         make_option('-v', '--verbose', dest='verbose', action='store_true', default=False),
+        make_option('-a', '--autopep8', dest='autopep8', action='store', default="autopep8"),
+        make_option('-u', '--author', dest='author', action='store'),
     ]
     return OptionParser(option_list=option_list)
 
@@ -120,8 +125,7 @@ def binary_in_path(binary):
     return any(os.path.exists(os.path.join(path, binary)) for path in set(os.environ["PATH"].split(':')))
 
 
-def test_for_required_binaries():
-    needed_binaries = ["git", "autopep8", "pep8"]
+def test_for_required_binaries(needed_binaries):
     found = [(binary, binary_in_path(binary)) for binary in needed_binaries]
     if not all(found_binary for _, found_binary in found):
         message("Certain additional binaries are required to run:")
@@ -131,15 +135,25 @@ def test_for_required_binaries():
 
 
 def main():
-    # Test for needed binaries. Exit if missing.
-    test_for_required_binaries()
-
     # Parse Command line options
     parser = option_parser()
     (o, _) = parser.parse_args()
 
+    # Test for needed binaries. Exit if missing.
+    needed_binaries = [
+        "git",
+        o.autopep8,
+        "pep8"
+    ]
+    test_for_required_binaries(needed_binaries)
+
     # Do the business
-    run_autopep8(start_dir=o.startdir, ext=o.extensions, recurse=o.recurse, dryrun=o.dryrun, verbose=o.verbose)
+    run_autopep8(
+        start_dir=o.startdir, ext=o.extensions, recurse=o.recurse,
+        dryrun=o.dryrun, verbose=o.verbose,
+        autopep8=o.autopep8,
+        author=o.author
+    )
 
 
 if __name__ == '__main__':
