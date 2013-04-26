@@ -91,13 +91,12 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False, verbose=F
         output, errors = p.communicate()
         if p.returncode:
             raise Exception(errors)
-        else:
+        elif hash_before != sha1_file(fullpath):
             # I can't tell if autopep8 has modified a file from the return code,
             # so I do it the hard way...
-            if hash_before != sha1_file(fullpath):
-                print(output, file=sys.stderr)
-                run_git(fullpath, error_comment, dryrun)
-                i += 1
+            print(output, file=sys.stderr)
+            run_git(fullpath, error_comment, dryrun)
+            i += 1
     print("# {0} files scanned/modified".format(i), file=sys.stderr)
 
 
