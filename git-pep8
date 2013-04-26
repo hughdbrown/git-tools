@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import sys
+import os
+import os.path
+from subprocess import Popen, PIPE, STDOUT
+
+
+BUFSIZE = 16 * 1024 * 1024
+
+ERRORS = [
+    #("W391", "blank line at end of file"),
+    #("W291", "trailing whitespace"),
+    #("W293", "blank line contains whitespace"),
+    #("W191", "indentation contains tabs"),
+    #("E101", "indentation contains mixed spaces and tabs"),
+    #("E301", "expected 1 blank line, found 0"),
+    #("E302", "line spacing between functions and classes"),
+    #("E303", "linespacing between functions and classes"),
+    #("E221", "multiple spaces before operator"),
+    #("E261", "whitespace after inline comment"),
+    #("E225", "space around operator"),
+    #("E231", "missing whitespace after ','"),
+    #("E203", "whitespace before colon"),
+    #("E201", "whitespace around [ and ]"),
+    #("E202", "whitespace around [ and ]"),
+    #("E251", "unexpected whitespace around parameter equals"),
+    ("E711", "comparison to None should be 'if cond is None:'"),
+    ("E701", "multiple statements on one line (colon)"),
+    
+    #("E128", "continuation line under-indented for visual indent"),
+    #("E124", "closing bracket does not match visual indentation")
+]
+
+
+def run_git(fullpath, comment, dryrun):
+    cmd = ["git", "commit", fullpath, "-m", comment]
+    print(cmd)
+    if not dryrun:
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
+        output, errors = p.communicate()
+        if p.returncode:
+            raise Exception(errors)
+
+
+def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False):
+    print("# run_autopep8({0})".format(start_dir), file=sys.stderr)
+
+    if recurse:
+        file_list = [
+            os.path.join(root, f)
+            for root, _, files in os.walk(start_dir)
+            for f in files
+        ]
+    else:
+        file_list = os.listdir(start_dir)
+    file_list = [path for path in file_list if os.path.splitext(path)[1] == ext]
+    
+    i = 0
+    for error_no, error_comment in ERRORS:
+        print(error_no, error_comment)
+        for fullpath in file_list:
+            cmd = ["autopep8", "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
+            #print(cmd)
+            p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
+            output, errors = p.communicate()
+            if p.returncode:
+                raise Exception(errors)
+            elif "--->  0 issue(s)" not in output:
+                print(output)
+                run_git(fullpath, error_comment, dryrun)
+                i += 1
+            #else:
+            #    print("Nothing to do {1}: {0}".format(fullpath, error_no))
+    print("# {0} files scanned/modified".format(i), file=sys.stderr)
+
+
+def option_parser():
+    from optparse import OptionParser, make_option
+    option_list = [
+        make_option('-r', '--recurse', dest='recurse', action='store_true', default=False),
+        make_option('-e', '--ext', dest='extensions', action='store', default=".py"),
+        make_option('-d', '--dryrun', dest='dryrun', action='store_true', default=False),
+        make_option('-s', '--startdir', dest='startdir', action='store', default="."),
+    ]
+    return OptionParser(option_list=option_list)
+
+
+def main():
+    parser = option_parser()
+    (options, args) = parser.parse_args()
+    #print(options)
+    run_autopep8(start_dir=options.startdir, ext=options.extensions, recurse=options.recurse, dryrun=options.dryrun)
+
+if __name__ == '__main__':
+    main()
