@@ -5,39 +5,55 @@ import sys
 import os
 import os.path
 from subprocess import Popen, PIPE, STDOUT
+from hashlib import sha1
 
 
 BUFSIZE = 16 * 1024 * 1024
 
 ERRORS = [
-    #("W391", "blank line at end of file"),
-    #("W291", "trailing whitespace"),
-    #("W293", "blank line contains whitespace"),
-    #("W191", "indentation contains tabs"),
-    #("E101", "indentation contains mixed spaces and tabs"),
-    #("E301", "expected 1 blank line, found 0"),
-    #("E302", "line spacing between functions and classes"),
-    #("E303", "linespacing between functions and classes"),
-    #("E221", "multiple spaces before operator"),
-    #("E261", "whitespace after inline comment"),
-    #("E225", "space around operator"),
-    #("E231", "missing whitespace after ','"),
-    #("E203", "whitespace before colon"),
-    #("E201", "whitespace around [ and ]"),
-    #("E202", "whitespace around [ and ]"),
-    #("E251", "unexpected whitespace around parameter equals"),
+    ("W391", "blank line at end of file"),
+    ("W291", "trailing whitespace"),
+    ("W293", "blank line contains whitespace"),
+    ("W191", "indentation contains tabs"),
+    ("E101", "indentation contains mixed spaces and tabs"),
+    ("E301", "expected 1 blank line, found 0"),
+    ("E302", "line spacing between functions and classes"),
+    ("E303", "linespacing between functions and classes"),
+    ("E221", "multiple spaces before operator"),
+    ("E222", "multiple spaces after operator"),
+    ("E261", "whitespace after inline comment"),
+    ("E226", "missing whitespace around arithmetic operator"),
+    ("E225", "space around operator"),
+    ("E231", "missing whitespace after ','"),
+    ("E203", "whitespace before colon"),
+    ("E201", "whitespace around [ and ]"),
+    ("E202", "whitespace around [ and ]"),
+    ("E251", "unexpected whitespace around parameter equals"),
     ("E711", "comparison to None should be 'if cond is None:'"),
+    ("E712", "comparison to True should be 'if cond is True:' or 'if cond:'"),
     ("E701", "multiple statements on one line (colon)"),
+    ("E401", "multiple imports on one line"),
+    ("E502", "the backslash is redundant between brackets"),
     
-    #("E128", "continuation line under-indented for visual indent"),
+    #("E123", "closing bracket does not match indentation of opening bracket's line"),
     #("E124", "closing bracket does not match visual indentation")
+    #("E125", "continuation line does not distinguish itself from next logical line"),
+    #("E126", "continuation line over-indented for hanging indent"),
+    #("E127", "continuation line over-indented for visual indent"),
+    #("E128", "continuation line under-indented for visual indent"),
 ]
 
 
+def sha1_file(filename):
+    with open(filename) as f:
+        return sha1(f.read()).hexdigest()
+
+
 def run_git(fullpath, comment, dryrun):
-    cmd = ["git", "commit", fullpath, "-m", comment]
-    print(cmd)
-    if not dryrun:
+    cmd = ["git", "commit", fullpath, "-m", "{0}: {1}".format(fullpath, comment)]
+    if dryrun:
+        print(cmd)
+    else:
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
         output, errors = p.communicate()
         if p.returncode:
@@ -45,7 +61,7 @@ def run_git(fullpath, comment, dryrun):
 
 
 def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False):
-    print("# run_autopep8({0})".format(start_dir), file=sys.stderr)
+    # print("# run_autopep8({0})".format(start_dir), file=sys.stderr)
 
     if recurse:
         file_list = [
@@ -61,18 +77,21 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False):
     for error_no, error_comment in ERRORS:
         print(error_no, error_comment)
         for fullpath in file_list:
+            hash_before = sha1_file(fullpath)
             cmd = ["autopep8", "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
             #print(cmd)
             p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
             output, errors = p.communicate()
             if p.returncode:
                 raise Exception(errors)
-            elif "--->  0 issue(s)" not in output:
-                print(output)
-                run_git(fullpath, error_comment, dryrun)
-                i += 1
-            #else:
-            #    print("Nothing to do {1}: {0}".format(fullpath, error_no))
+            else:
+                hash_after = sha1_file(fullpath)
+                if hash_before != hash_after:
+                    print(output)
+                    run_git(fullpath, error_comment, dryrun)
+                    i += 1
+                # else:
+                #     print(output)
     print("# {0} files scanned/modified".format(i), file=sys.stderr)
 
 
