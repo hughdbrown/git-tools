@@ -34,7 +34,7 @@ ERRORS = [
     ("E701", "multiple statements on one line (colon)"),
     ("E401", "multiple imports on one line"),
     ("E502", "the backslash is redundant between brackets"),
-    
+
     #("E123", "closing bracket does not match indentation of opening bracket's line"),
     #("E124", "closing bracket does not match visual indentation")
     #("E125", "continuation line does not distinguish itself from next logical line"),
@@ -52,17 +52,15 @@ def sha1_file(filename):
 def run_git(fullpath, comment, dryrun):
     cmd = ["git", "commit", fullpath, "-m", "{0}: {1}".format(fullpath, comment)]
     if dryrun:
-        print(cmd)
+        print(" ".join(cmd), file=sys.stderr)
     else:
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
-        output, errors = p.communicate()
+        _, errors = p.communicate()
         if p.returncode:
             raise Exception(errors)
 
 
-def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False):
-    # print("# run_autopep8({0})".format(start_dir), file=sys.stderr)
-
+def get_filelist(start_dir, recurse, ext):
     if recurse:
         file_list = [
             os.path.join(root, f)
@@ -71,27 +69,35 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False):
         ]
     else:
         file_list = os.listdir(start_dir)
-    file_list = [path for path in file_list if os.path.splitext(path)[1] == ext]
-    
-    i = 0
+    return [path for path in file_list if os.path.splitext(path)[1] == ext]
+
+
+def loop_params(file_list):
     for error_no, error_comment in ERRORS:
-        print(error_no, error_comment)
+        print("{0} {1}".format(error_no, error_comment), file=sys.stderr)
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
-            cmd = ["autopep8", "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
-            #print(cmd)
-            p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
-            output, errors = p.communicate()
-            if p.returncode:
-                raise Exception(errors)
-            else:
-                hash_after = sha1_file(fullpath)
-                if hash_before != hash_after:
-                    print(output)
-                    run_git(fullpath, error_comment, dryrun)
-                    i += 1
-                # else:
-                #     print(output)
+            yield (fullpath, hash_before, error_no, error_comment)
+
+
+def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False, verbose=False):
+    file_list = get_filelist(start_dir, recurse, ext)
+    i = 0
+    for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
+        cmd = ["autopep8", "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
+        if verbose:
+            print(" ".join(cmd), file=sys.stderr)
+        p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
+        output, errors = p.communicate()
+        if p.returncode:
+            raise Exception(errors)
+        else:
+            # I can't tell if autopep8 has modified a file from the return code,
+            # so I do it the hard way...
+            if hash_before != sha1_file(fullpath):
+                print(output, file=sys.stderr)
+                run_git(fullpath, error_comment, dryrun)
+                i += 1
     print("# {0} files scanned/modified".format(i), file=sys.stderr)
 
 
@@ -102,15 +108,36 @@ def option_parser():
         make_option('-e', '--ext', dest='extensions', action='store', default=".py"),
         make_option('-d', '--dryrun', dest='dryrun', action='store_true', default=False),
         make_option('-s', '--startdir', dest='startdir', action='store', default="."),
+        make_option('-v', '--verbose', dest='verbose', action='store_true', default=False),
     ]
     return OptionParser(option_list=option_list)
 
 
+def binary_in_path(binary):
+    return any(os.path.exists(os.path.join(path, binary)) for path in set(os.environ["PATH"].split(':')))
+
+
+def test_for_required_binaries():
+    needed_binaries = ["git", "autopep8", "pep8"]
+    found = [(binary, binary_in_path(binary)) for binary in needed_binaries]
+    if not all(found_binary for _, found_binary in found):
+        print("Certain additional binaries are required to run:")
+        for binary, found_binary in found:
+            print("\t{0}: {1}".format(binary, "Found" if found_binary else "Not found"))
+        sys.exit(1)
+
+
 def main():
+    # Test for needed binaries. Exit if missing.
+    test_for_required_binaries()
+
+    # Parse Command line options
     parser = option_parser()
-    (options, args) = parser.parse_args()
-    #print(options)
-    run_autopep8(start_dir=options.startdir, ext=options.extensions, recurse=options.recurse, dryrun=options.dryrun)
+    (o, _) = parser.parse_args()
+
+    # Do the business
+    run_autopep8(start_dir=o.startdir, ext=o.extensions, recurse=o.recurse, dryrun=o.dryrun, verbose=o.verbose)
+
 
 if __name__ == '__main__':
     main()
