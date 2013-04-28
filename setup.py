@@ -20,7 +20,7 @@ setup(
 
     # Main packages
     packages=[
-        'git-tools'
+        'src',
     ],
 
     # Command line scripts
