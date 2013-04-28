@@ -25,6 +25,6 @@ setup(
 
     # Command line scripts
     scripts=[
-        'bin/git-pep8',
+        'src/git-pep8',
     ],
 )
