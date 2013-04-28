@@ -2,6 +2,7 @@
 
 from setuptools import setup
 
+
 def reqs_from_file(filename):
     with open(filename) as f:
         lineiter = (line.rstrip() for line in f)
