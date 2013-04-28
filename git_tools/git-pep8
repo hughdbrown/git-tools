@@ -49,68 +49,44 @@ ERRORS = [
 ]
 
 
-def message(msg):
-    print(msg, file=sys.stderr)
-
-
-def sha1_file(filename):
-    with open(filename) as f:
-        return sha1(f.read()).hexdigest()
-
-
-def run_git(fullpath, comment, dryrun, author=None):
-    cmd = ["git", "commit", fullpath, "-m", "{0}: {1}".format(fullpath, comment)]
-    if author:
-        cmd += ["--author", author]
-
-    if dryrun:
-        message(" ".join(cmd))
-    else:
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
-        _, errors = p.communicate()
-        if p.returncode:
-            raise Exception(errors)
-
-
-def get_filelist(start_dir, recurse, ext):
-    if recurse:
-        file_list = [
-            os.path.join(root, f)
-            for root, _, files in os.walk(start_dir)
-            for f in files
-        ]
-    else:
-        file_list = os.listdir(start_dir)
-    return [path for path in file_list if os.path.splitext(path)[1] == ext]
-
-
 def loop_params(file_list):
-    for error_no, error_comment in ERRORS:
-        message("{0} {1}".format(error_no, error_comment))
+    for i, (error_no, error_comment) in enumerate(ERRORS, start=1):
+        message("{2} of {3}: {0} {1}".format(error_no, error_comment, i, len(ERRORS)))
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
             yield (fullpath, hash_before, error_no, error_comment)
 
 
-def run_autopep8(start_dir=".", ext=".py", recurse=True, dryrun=False, verbose=False, autopep8=None, author=None):
+def run_command(cmd):
+    p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
+    output, errors = p.communicate()
+    if p.returncode:
+        raise Exception(errors)
+    else:
+        return output
+
+
+def run_autopep8(start_dir=".", ext=".py", recurse=True,
+                 dryrun=False, verbose=False, autopep8=None, author=None):
+    autopep8 = autopep8 or "autopep8"
     file_list = get_filelist(start_dir, recurse, ext)
     i = 0
     for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
         cmd = [autopep8, "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
-        if verbose:
+        if verbose or dryrun:
             message(" ".join(cmd))
-        p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
-        output, errors = p.communicate()
-        if p.returncode:
-            raise Exception(errors)
-        elif hash_before != sha1_file(fullpath):
-            # I can't tell if autopep8 has modified a file from the return code,
-            # so I do it the hard way...
-            message(output)
-            git_comment = "{0} {1}".format(error_no, error_comment)
-            run_git(fullpath, git_comment, dryrun, author)
-            i += 1
-    print("# {0} files scanned/modified".format(i), file=sys.stderr)
+        if not dryrun:
+            output = run_command(cmd)
+            if hash_before != sha1_file(fullpath):
+                # I can't tell if autopep8 has modified a file from the return code,
+                # so I do it the hard way...
+                message(output)
+                git_commit(
+                    fullpath,
+                    "{0} {1}".format(error_no, error_comment),
+                    dryrun, verbose, author)
+                i += 1
+    message("# {0} files scanned/modified".format(i))
 
 
 def option_parser():
