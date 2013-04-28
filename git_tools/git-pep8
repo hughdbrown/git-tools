@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-from __future__ import print_function
-
-import sys
-import os
-import os.path
 from subprocess import Popen, PIPE, STDOUT
-from hashlib import sha1
+
+from . import (
+    message,
+    sha1_file,
+    get_filelist,
+    test_for_required_binaries,
+
+    git_commit,
+)
 
 
 BUFSIZE = 16 * 1024 * 1024
@@ -122,19 +125,6 @@ def option_parser():
         make_option('-u', '--author', dest='author', action='store'),
     ]
     return OptionParser(option_list=option_list)
-
-
-def binary_in_path(binary):
-    return any(os.path.exists(os.path.join(path, binary)) for path in set(os.environ["PATH"].split(':')))
-
-
-def test_for_required_binaries(needed_binaries):
-    found = [(binary, binary_in_path(binary)) for binary in needed_binaries]
-    if not all(found_binary for _, found_binary in found):
-        message("Certain additional binaries are required to run:")
-        for binary, found_binary in found:
-            message("\t{0}: {1}".format(binary, "Found" if found_binary else "Not found"))
-        sys.exit(1)
 
 
 def main():
