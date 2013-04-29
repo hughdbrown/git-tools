@@ -32,11 +32,16 @@ ERRORS = [
     ("E201", "whitespace around [ and ]"),
     ("E202", "whitespace around [ and ]"),
     ("E251", "unexpected whitespace around parameter equals"),
-    ("E711", "comparison to None should be 'if cond is None:'"),
-    ("E712", "comparison to True should be 'if cond is True:' or 'if cond:'"),
     ("E701", "multiple statements on one line (colon)"),
     ("E401", "multiple imports on one line"),
     ("E502", "the backslash is redundant between brackets"),
+    ("W601", ".has_key() is deprecated, use 'in'"),
+
+    # These two almost never work
+    ("E711", "comparison to None should be 'if cond is None:'"),
+    ("E712", "comparison to True should be 'if cond is True:' or 'if cond:'"),
+
+    ("E121", "continuation line indentation is not a multiple of four"),
 
     # I don't like these rules because autopep8 does not really give good
     # transformations
