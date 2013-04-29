@@ -54,7 +54,7 @@ def get_filelist(start_dir, recurse, ext=None):
             for f in files
         ]
     else:
-        file_list = os.listdir(start_dir)
+        file_list = [os.path.join(start_dir, filename) for filename in os.listdir(start_dir)]
     return file_list if not ext else [path for path in file_list if os.path.splitext(path)[1] == ext]
 
 
