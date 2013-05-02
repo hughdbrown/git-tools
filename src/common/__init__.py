@@ -11,14 +11,28 @@ BUFSIZE = 16 * 1024 * 1024
 
 
 def message(msg):
+    """
+    General message printer
+    """
     print(msg, file=sys.stderr)
 
 
 def binary_in_path(binary):
-    return any(os.path.exists(os.path.join(path, binary)) for path in set(os.environ["PATH"].split(':')))
+    # Get unique list of path components
+    paths = set(os.environ["PATH"].split(':'))
+    # Join binary onto path component
+    path_iter = (os.path.join(path, binary) for path in paths)
+    # Expand any ~ and environment variables
+    expanded_path_iter = (os.path.expandvars(os.path.expanduser(p)) for p in path_iter)
+    # See if any of these possible files exists
+    return any(os.path.exists(p) for p in expanded_path_iter)
 
 
 def test_for_required_binaries(needed_binaries):
+    """
+    Find out which binaries can be found on disk
+    Issue a message and abort if any was not found
+    """
     found = [(binary, binary_in_path(binary)) for binary in needed_binaries]
     if not all(found_binary for _, found_binary in found):
         message("Certain additional binaries are required to run:")
@@ -28,11 +42,17 @@ def test_for_required_binaries(needed_binaries):
 
 
 def sha1_file(filename):
+    """
+    Generate the sha1 hash for a file
+    """
     with open(filename) as f:
         return sha1(f.read()).hexdigest()
 
 
 def git_commit(fullpath, comment, dryrun, verbose, author=None):
+    """
+    Execute git-commit command
+    """
     cmd = ["git", "commit", fullpath, "-m", "{0}: {1}".format(fullpath, comment)]
     if author:
         cmd += ["--author", author]
@@ -47,6 +67,9 @@ def git_commit(fullpath, comment, dryrun, verbose, author=None):
 
 
 def get_filelist(start_dir, recurse, ext=None):
+    """
+    Generate list of files, optionally recursive, optionally filtered on extension
+    """
     if recurse:
         file_list = [
             os.path.join(root, f)

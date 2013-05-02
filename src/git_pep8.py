@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from subprocess import Popen, PIPE, STDOUT
 
-from common import (
+from src.common import (
     message,
     sha1_file,
     get_filelist,
