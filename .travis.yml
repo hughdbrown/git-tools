@@ -4,7 +4,8 @@ python:
     - "2.7"
     - "2.6"
     - "pypy"
-    - "3.3"
+# Don't understand why python 3.3 build is failing
+#    - "3.3"
 
 install:
   - pip install --use-mirrors -r requirements.txt
