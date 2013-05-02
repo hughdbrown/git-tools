@@ -74,6 +74,12 @@ def get_filelist(start_dir, recurse, ext=None):
     """
     Generate list of files, optionally recursive, optionally filtered on extension
     """
+
+    egg_re = compile(r"^.*\.egg$")
+
+    def is_egg_dir(dirname):
+        return egg_re.match(dirname)
+
     if recurse:
         file_list = [
             os.path.join(root, f)
@@ -82,7 +88,13 @@ def get_filelist(start_dir, recurse, ext=None):
         ]
     else:
         file_list = [os.path.join(start_dir, filename) for filename in os.listdir(start_dir)]
-    return file_list if not ext else [path for path in file_list if os.path.splitext(path)[1] == ext]
+
+    return file_list if not ext else \
+        [
+            path for path in file_list
+            if os.path.splitext(path)[1] == ext
+            if not any(is_egg_dir(p) for p in path.split("/"))
+        ]
 
 
 __all__ = [
