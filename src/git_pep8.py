@@ -97,13 +97,13 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True,
 def option_parser():
     from optparse import OptionParser, make_option
     option_list = [
-        make_option('-r', '--recurse', dest='recurse', action='store_true', default=False),
-        make_option('-e', '--ext', dest='extensions', action='store', default=".py"),
-        make_option('-d', '--dryrun', dest='dryrun', action='store_true', default=False),
-        make_option('-s', '--startdir', dest='startdir', action='store', default="."),
-        make_option('-v', '--verbose', dest='verbose', action='store_true', default=False),
-        make_option('-a', '--autopep8', dest='autopep8', action='store', default="autopep8"),
-        make_option('-u', '--author', dest='author', action='store'),
+        make_option('-r', '--recurse', dest='recurse', action='store_true', default=False, help='Recurse down directories from STARTDIR'),
+        make_option('-e', '--ext', dest='extensions', action='store', default=".py", help='Specify file extension to work on'),
+        make_option('-d', '--dryrun', dest='dryrun', action='store_true', default=False, help='Do dry run -- do not modify files'),
+        make_option('-s', '--startdir', dest='startdir', action='store', default=".", help='Specify directory to start in'),
+        make_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Verbose output'),
+        make_option('-a', '--autopep8', dest='autopep8', action='store', default="autopep8", help='Specify path to autopep8 instance'),
+        make_option('-u', '--author', dest='author', action='store', help='Change git author'),
     ]
     return OptionParser(option_list=option_list)
 
