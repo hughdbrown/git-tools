@@ -5,14 +5,16 @@ from setuptools import setup
 
 def reqs_from_file(filename):
     with open(filename) as f:
-        lineiter = (line.rstrip() for line in f)
+        lineiter = (line.rstrip() for line in f if not line.startswith("#"))
         return list(filter(None, lineiter))
 
 
 setup(
     name='git-tools',
     version='0.1',
-    description='git tools',
+    description='Suite of tools for working with git repositories',
+    author='Hugh Brown',
+    author_email='hughdbrown@yahoo.com',
 
     # Required packages
     install_requires=reqs_from_file('requirements.txt'),
@@ -21,10 +23,17 @@ setup(
     # Main packages
     packages=[
         'src',
+        'src.common',
     ],
 
-    # Command line scripts
+    zip_safe=False,
+
     scripts=[
-        'src/git-pep8',
+        'bin/git-pep8',
     ],
+    entry_points={
+        'console_scripts': [
+            'git-pep8 = src.git_pep8:main',
+        ],
+    },
 )
