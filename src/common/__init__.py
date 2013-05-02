@@ -5,16 +5,19 @@ import sys
 import os
 import os.path
 from subprocess import Popen, PIPE
+from re import compile
+
+from termcolor import colored
 
 
 BUFSIZE = 16 * 1024 * 1024
 
 
-def message(msg):
+def message(msg, color='green'):
     """
     General message printer
     """
-    print(msg, file=sys.stderr)
+    print(colored(msg, color), file=sys.stderr)
 
 
 def binary_in_path(binary):
@@ -58,11 +61,12 @@ def git_commit(fullpath, comment, dryrun, verbose, author=None):
         cmd += ["--author", author]
 
     if dryrun or verbose:
-        message(" ".join(cmd))
+        message(" ".join(cmd), 'blue')
     if not dryrun:
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
         _, errors = p.communicate()
         if p.returncode:
+            message("Error in {0}".format(fullpath), 'red')
             raise Exception(errors)
 
 
