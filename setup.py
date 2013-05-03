@@ -11,7 +11,7 @@ def reqs_from_file(filename):
 
 setup(
     name='git-tools',
-    version='0.1.3',
+    version='0.1.4',
     description='Suite of tools for working with git repositories',
     author='Hugh Brown',
     author_email='hughdbrown@yahoo.com',
