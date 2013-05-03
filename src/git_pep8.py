@@ -2,7 +2,7 @@
 from subprocess import Popen, PIPE, STDOUT
 
 from src.common import (
-    message,
+    error, info,
     sha1_file,
     get_filelist,
     test_for_required_binaries,
@@ -98,7 +98,7 @@ ERRORS = [
 
 def loop_params(file_list):
     for i, (error_no, error_comment) in enumerate(ERRORS, start=1):
-        message("{2} of {3}: {0} {1}".format(
+        info("{2} of {3}: {0} {1}".format(
             error_no, error_comment, i, len(ERRORS)))
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
@@ -123,23 +123,38 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True,
         cmd = [autopep8, "--in-place", "--verbose",
                "--select={0}".format(error_no), fullpath]
         if verbose or dryrun:
-            message(" ".join(cmd))
+            info(" ".join(cmd))
         if not dryrun:
             output = run_command(cmd)
             if hash_before != sha1_file(fullpath):
                 # I can't tell if autopep8 has modified a file from the return code,
                 # so I do it the hard way...
-                message(output)
+                info(output)
                 git_commit(
                     fullpath,
                     "{0} {1}".format(error_no, error_comment),
                     dryrun, verbose, author)
                 i += 1
-    message("# {0} files scanned/modified".format(i))
+    info("# {0} files scanned/modified".format(i))
+
+METHODS = (
+    "by-file-and-reason",
+    "by-file-only",
+    "by-reason-only",
+    "all",
+)
+
+METHOD_TABLE = {
+    METHODS[0]: run_autopep8,
+    METHODS[1]: run_autopep8,
+    METHODS[2]: run_autopep8,
+    METHODS[3]: run_autopep8,
+}
 
 
 def option_parser():
     from optparse import OptionParser, make_option
+
     option_list = [
         make_option('-r', '--recurse', dest='recurse', action='store_true',
                     default=False, help='Recurse down directories from STARTDIR'),
@@ -155,6 +170,10 @@ def option_parser():
                     default="autopep8", help='Specify path to autopep8 instance'),
         make_option('-u', '--author', dest='author',
                     action='store', help='Change git author'),
+        make_option('-m', '--method', dest='method',
+                    default=METHODS[0],
+                    action='store',
+                    help='Method of traversing errors and files to use with autopep8'),
     ]
     return OptionParser(option_list=option_list)
 
@@ -173,12 +192,16 @@ def main():
     test_for_required_binaries(needed_binaries)
 
     # Do the business
-    run_autopep8(
-        start_dir=o.startdir, ext=o.extensions, recurse=o.recurse,
-        dryrun=o.dryrun, verbose=o.verbose,
-        autopep8=o.autopep8,
-        author=o.author
-    )
+    try:
+        method_fn = METHOD_TABLE[o.method]
+        method_fn(
+            start_dir=o.startdir, ext=o.extensions, recurse=o.recurse,
+            dryrun=o.dryrun, verbose=o.verbose,
+            autopep8=o.autopep8,
+            author=o.author
+        )
+    except KeyError as err:
+        error(err)
 
 
 if __name__ == '__main__':

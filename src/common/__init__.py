@@ -1,3 +1,6 @@
+"""
+Shared functions for git-tools
+"""
 from __future__ import print_function
 
 from hashlib import sha1
@@ -13,11 +16,25 @@ from termcolor import colored
 BUFSIZE = 16 * 1024 * 1024
 
 
-def message(msg, color='green'):
+def message(msg, fcolor='green', bcolor='on black'):
     """
     General message printer
     """
-    print(colored(msg, color), file=sys.stderr)
+    print(colored(msg, fcolor, bcolor), file=sys.stderr)
+
+
+def error(msg):
+    """
+    General error printer
+    """
+    message(msg, fcolor='red', bcolor='on cyan')
+
+
+def info(msg):
+    """
+    General info printer
+    """
+    message(msg, fcolor='green')
 
 
 def binary_in_path(binary):
