@@ -114,10 +114,10 @@ def run_command(cmd):
         return output
 
 
-def run_autopep8(start_dir=".", ext=".py", recurse=True,
+def run_autopep8(file_or_directory, ext=".py", recurse=True,
                  dryrun=False, verbose=False, autopep8=None, author=None):
     autopep8 = autopep8 or "autopep8"
-    file_list = get_filelist(start_dir, recurse, ext)
+    file_list = get_filelist(file_or_directory, recurse, ext)
     i = 0
     for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
         cmd = [autopep8, "--in-place", "--verbose",
@@ -162,8 +162,6 @@ def option_parser():
                     default=".py", help='Specify file extension to work on'),
         make_option('-d', '--dryrun', dest='dryrun', action='store_true',
                     default=False, help='Do dry run -- do not modify files'),
-        make_option('-s', '--startdir', dest='startdir', action='store',
-                    default=".", help='Specify directory to start in'),
         make_option('-v', '--verbose', dest='verbose',
                     action='store_true', default=False, help='Verbose output'),
         make_option('-a', '--autopep8', dest='autopep8', action='store',
@@ -181,7 +179,7 @@ def option_parser():
 def main():
     # Parse Command line options
     parser = option_parser()
-    (o, _) = parser.parse_args()
+    (o, args) = parser.parse_args()
 
     # Test for needed binaries. Exit if missing.
     needed_binaries = [
@@ -192,16 +190,20 @@ def main():
     test_for_required_binaries(needed_binaries)
 
     # Do the business
-    try:
-        method_fn = METHOD_TABLE[o.method]
-        method_fn(
-            start_dir=o.startdir, ext=o.extensions, recurse=o.recurse,
-            dryrun=o.dryrun, verbose=o.verbose,
-            autopep8=o.autopep8,
-            author=o.author
-        )
-    except KeyError as err:
-        error(err)
+    method_fn = METHOD_TABLE.get(o.method)
+    if method_fn:
+        for arg in (args or ["."]):
+            method_fn(
+                arg,
+                ext=o.extensions, recurse=o.recurse,
+                dryrun=o.dryrun, verbose=o.verbose,
+                autopep8=o.autopep8,
+                author=o.author
+            )
+    else:
+        fmt = "'{0}' is not a valid value for --method.  Valid ones are: {1}"
+        keys = sorted(METHOD_TABLE.keys())
+        error(fmt.format(o.method, ", ".join(keys)))
 
 
 if __name__ == '__main__':

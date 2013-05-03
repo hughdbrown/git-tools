@@ -87,7 +87,7 @@ def git_commit(fullpath, comment, dryrun, verbose, author=None):
             raise Exception(errors)
 
 
-def get_filelist(start_dir, recurse, ext=None):
+def get_filelist(file_or_directory, recurse, ext=None):
     """
     Generate list of files, optionally recursive, optionally filtered on extension
     """
@@ -97,21 +97,28 @@ def get_filelist(start_dir, recurse, ext=None):
     def is_egg_dir(dirname):
         return egg_re.match(dirname)
 
-    if recurse:
+    if os.path.isfile(file_or_directory):
+        file_list = [file_or_directory]
+    elif recurse:
         file_list = [
             os.path.join(root, f)
-            for root, _, files in os.walk(start_dir)
+            for root, _, files in os.walk(file_or_directory)
             for f in files
         ]
     else:
-        file_list = [os.path.join(start_dir, filename) for filename in os.listdir(start_dir)]
-
-    return file_list if not ext else \
-        [
-            path for path in file_list
-            if os.path.splitext(path)[1] == ext
-            if not any(is_egg_dir(p) for p in path.split("/"))
+        file_list = [
+            os.path.join(file_or_directory, filename)
+            for filename in os.listdir(file_or_directory)
         ]
+
+    # Filter out files that do not match on file extension
+    ext_filter = (path for path in file_list if ext is None or os.path.splitext(path)[1] == ext)
+    # Filter out directories that are egg directories
+
+    # Unlikely that they are part of the git repo
+    egg_filter = (path for path in ext_filter if not any(is_egg_dir(p) for p in path.split("/")))
+
+    return list(egg_filter)
 
 
 __all__ = [
