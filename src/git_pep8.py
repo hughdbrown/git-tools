@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-from subprocess import Popen, PIPE, STDOUT
-
 from src.common import (
     error, info,
     sha1_file,
     get_filelist,
     test_for_required_binaries,
-
+    run_command,
     git_commit,
 )
 
@@ -103,15 +101,6 @@ def loop_params(file_list):
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
             yield (fullpath, hash_before, error_no, error_comment)
-
-
-def run_command(cmd):
-    p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
-    output, errors = p.communicate()
-    if p.returncode:
-        raise Exception(errors)
-    else:
-        return output
 
 
 def run_autopep8(file_or_directory, ext=".py", recurse=True,

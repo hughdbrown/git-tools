@@ -7,7 +7,7 @@ from hashlib import sha1
 import sys
 import os
 import os.path
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 import re
 
 from termcolor import cprint
@@ -121,10 +121,20 @@ def get_filelist(file_or_directory, recurse, ext=None):
     return list(egg_filter)
 
 
+def run_command(cmd):
+    p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
+    output, errors = p.communicate()
+    if p.returncode:
+        raise Exception(errors)
+    else:
+        return output
+
+
 __all__ = [
     "message", "info", "error",
     "sha1_file",
     "test_for_required_binaries",
     "git_commit",
     "get_filelist",
+    "run_command",
 ]
