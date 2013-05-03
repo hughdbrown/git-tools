@@ -68,7 +68,6 @@ METHOD_TABLE = {
 }
 
 
-
 def option_parser():
     from optparse import OptionParser, make_option
 
