@@ -138,9 +138,13 @@ def run_autopep8(file_or_directory, ext=".py", recurse=True,
     info("# {0} files scanned/modified".format(i))
 
 METHODS = (
+    # Iterate over each file and reason, running autopep8
     "by-file-and-reason",
+    # Iterate over each file running autopep8 with all reasons selected
     "by-file-only",
+    # Iterate over each reason running autopep8 on all files at once
     "by-reason-only",
+    # Run autopep8 only once on all files applying all reasons
     "all",
 )
 
