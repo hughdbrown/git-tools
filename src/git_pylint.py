@@ -26,7 +26,7 @@ def loop_params(file_list):
 
 
 def run_autopylint(file_or_directory, ext=".py", recurse=True,
-                 dryrun=False, verbose=False, author=None):
+                   dryrun=False, verbose=False, author=None):
     file_list = get_filelist(file_or_directory, recurse, ext)
     i = 0
     for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
