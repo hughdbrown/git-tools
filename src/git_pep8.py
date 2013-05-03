@@ -86,7 +86,7 @@ ERRORS = [
 
     # I don't like these rules because autopep8 does not really give good
     # transformations
-    ("E122", "Add absent indentation for hanging indentation").
+    ("E122", "Add absent indentation for hanging indentation"),
     ("E123", "closing bracket does not match indentation of opening bracket's line"),
     ("E124", "closing bracket does not match visual indentation"),
     ("E125", "continuation line does not distinguish itself from next logical line"),
