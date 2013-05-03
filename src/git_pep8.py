@@ -13,38 +13,80 @@ from src.common import (
 
 BUFSIZE = 16 * 1024 * 1024
 
+# These rules are listed in non-ascending order.
+# I think it is better because
 ERRORS = [
     ("W391", "blank line at end of file"),
     ("W291", "trailing whitespace"),
     ("W293", "blank line contains whitespace"),
     ("W191", "indentation contains tabs"),
     ("E101", "indentation contains mixed spaces and tabs"),
+    # Never seen this rule applied
+    # ("E111", "Reindent all lines."),
+
+    # Line spacing
     ("E301", "expected 1 blank line, found 0"),
     ("E302", "line spacing between functions and classes"),
     ("E303", "linespacing between functions and classes"),
-    ("E221", "multiple spaces before operator"),
-    ("E222", "multiple spaces after operator"),
+    ("E304", "Remove blank line following function decorator."),
+
+    # Whitespace
+    ("E211", "Remove extraneous whitespace."),
+    ("E221", "Fix extraneous whitespace around keywords."),
+    ("E222", "Fix extraneous whitespace around keywords."),
+    ("E223", "Fix extraneous whitespace around keywords."),
+    ("E224", "Remove extraneous whitespace around operator."),
+    ("E225", "Fix missing whitespace around operator."),
+    ("E226", "Fix missing whitespace around operator."),
+    ("E227", "Fix missing whitespace around operator."),
+    ("E228", "Fix missing whitespace around operator."),
+    ("E231", "Add missing whitespace."),
+
     ("E261", "whitespace after inline comment"),
-    ("E226", "missing whitespace around arithmetic operator"),
-    ("E225", "space around operator"),
-    ("E231", "missing whitespace after ','"),
+    ("E241", "Fix extraneous whitespace around keywords."),
+    ("E242", "Remove extraneous whitespace around operator."),
+    ("E251", "Remove whitespace around parameter '=' sign."),
+    ("E261", "Fix spacing after comment hash."),
+    ("E262", "Fix spacing after comment hash."),
+
     ("E203", "whitespace before colon"),
     ("E201", "whitespace around [ and ]"),
     ("E202", "whitespace around [ and ]"),
+
     ("E251", "unexpected whitespace around parameter equals"),
+    ("E271", "Fix extraneous whitespace around keywords."),
+    ("E272", "Fix extraneous whitespace around keywords."),
+    ("E273", "Fix extraneous whitespace around keywords."),
+    ("E274", "Fix extraneous whitespace around keywords."),
+
+    # Multiple statements
     ("E701", "multiple statements on one line (colon)"),
+    ("E702", "Put semicolon-separated compound statement on separate lines."),
+    ("E703", "Put semicolon-separated compound statement on separate lines."),
+
+    # Multiple imports
     ("E401", "multiple imports on one line"),
+
+    # ("E501", "Try to make lines fit within --max-line-length characters."),
     ("E502", "the backslash is redundant between brackets"),
     ("W601", ".has_key() is deprecated, use 'in'"),
+    ("W602", "Fix deprecated form of raising exception."),
+    ("W603", "Replace <> with !=."),
+    ("W604", "Replace backticks with repr()."),
 
-    # These two almost never work
+    # These require --aggressive be sent to autopep8 command line
     ("E711", "comparison to None should be 'if cond is None:'"),
     ("E712", "comparison to True should be 'if cond is True:' or 'if cond:'"),
 
+    # Never seen this rule applied to code.
+    # ("E721", "Switch to use isinstance()."),
+
+    # Indentation
     ("E121", "continuation line indentation is not a multiple of four"),
 
     # I don't like these rules because autopep8 does not really give good
     # transformations
+    ("E122", "Add absent indentation for hanging indentation").
     ("E123", "closing bracket does not match indentation of opening bracket's line"),
     ("E124", "closing bracket does not match visual indentation"),
     ("E125", "continuation line does not distinguish itself from next logical line"),
@@ -56,7 +98,8 @@ ERRORS = [
 
 def loop_params(file_list):
     for i, (error_no, error_comment) in enumerate(ERRORS, start=1):
-        message("{2} of {3}: {0} {1}".format(error_no, error_comment, i, len(ERRORS)))
+        message("{2} of {3}: {0} {1}".format(
+            error_no, error_comment, i, len(ERRORS)))
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
             yield (fullpath, hash_before, error_no, error_comment)
@@ -77,7 +120,8 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True,
     file_list = get_filelist(start_dir, recurse, ext)
     i = 0
     for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
-        cmd = [autopep8, "--in-place", "--verbose", "--select={0}".format(error_no), fullpath]
+        cmd = [autopep8, "--in-place", "--verbose",
+               "--select={0}".format(error_no), fullpath]
         if verbose or dryrun:
             message(" ".join(cmd))
         if not dryrun:
@@ -97,13 +141,20 @@ def run_autopep8(start_dir=".", ext=".py", recurse=True,
 def option_parser():
     from optparse import OptionParser, make_option
     option_list = [
-        make_option('-r', '--recurse', dest='recurse', action='store_true', default=False, help='Recurse down directories from STARTDIR'),
-        make_option('-e', '--ext', dest='extensions', action='store', default=".py", help='Specify file extension to work on'),
-        make_option('-d', '--dryrun', dest='dryrun', action='store_true', default=False, help='Do dry run -- do not modify files'),
-        make_option('-s', '--startdir', dest='startdir', action='store', default=".", help='Specify directory to start in'),
-        make_option('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Verbose output'),
-        make_option('-a', '--autopep8', dest='autopep8', action='store', default="autopep8", help='Specify path to autopep8 instance'),
-        make_option('-u', '--author', dest='author', action='store', help='Change git author'),
+        make_option('-r', '--recurse', dest='recurse', action='store_true',
+                    default=False, help='Recurse down directories from STARTDIR'),
+        make_option('-e', '--ext', dest='extensions', action='store',
+                    default=".py", help='Specify file extension to work on'),
+        make_option('-d', '--dryrun', dest='dryrun', action='store_true',
+                    default=False, help='Do dry run -- do not modify files'),
+        make_option('-s', '--startdir', dest='startdir', action='store',
+                    default=".", help='Specify directory to start in'),
+        make_option('-v', '--verbose', dest='verbose',
+                    action='store_true', default=False, help='Verbose output'),
+        make_option('-a', '--autopep8', dest='autopep8', action='store',
+                    default="autopep8", help='Specify path to autopep8 instance'),
+        make_option('-u', '--author', dest='author',
+                    action='store', help='Change git author'),
     ]
     return OptionParser(option_list=option_list)
 
