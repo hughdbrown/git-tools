@@ -10,24 +10,24 @@ import os.path
 from subprocess import Popen, PIPE
 import re
 
-from termcolor import colored
+from termcolor import cprint
 
 
 BUFSIZE = 16 * 1024 * 1024
 
 
-def message(msg, fcolor='green', bcolor='on black'):
+def message(msg, fcolor='green', bcolor=None):
     """
     General message printer
     """
-    print(colored(msg, fcolor, bcolor), file=sys.stderr)
+    cprint(msg, fcolor, bcolor, file=sys.stderr)
 
 
 def error(msg):
     """
     General error printer
     """
-    message(msg, fcolor='red', bcolor='on cyan')
+    message(msg, fcolor='red', bcolor='on_yellow')
 
 
 def info(msg):
@@ -55,9 +55,9 @@ def test_for_required_binaries(needed_binaries):
     """
     found = [(binary, binary_in_path(binary)) for binary in needed_binaries]
     if not all(found_binary for _, found_binary in found):
-        message("Certain additional binaries are required to run:")
+        error("Certain additional binaries are required to run:")
         for binary, found_binary in found:
-            message("\t{0}: {1}".format(binary, "Found" if found_binary else "Not found"))
+            error("\t{0}: {1}".format(binary, "Found" if found_binary else "Not found"))
         sys.exit(1)
 
 
@@ -83,7 +83,7 @@ def git_commit(fullpath, comment, dryrun, verbose, author=None):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
         _, errors = p.communicate()
         if p.returncode:
-            message("Error in {0}".format(fullpath), 'red')
+            error("Error in {0}".format(fullpath), 'red')
             raise Exception(errors)
 
 
@@ -115,7 +115,7 @@ def get_filelist(start_dir, recurse, ext=None):
 
 
 __all__ = [
-    "message",
+    "message", "info", "error",
     "sha1_file",
     "test_for_required_binaries",
     "git_commit",
