@@ -5,7 +5,7 @@ import sys
 import os
 import os.path
 from subprocess import Popen, PIPE
-from re import compile
+import re
 
 from termcolor import colored
 
@@ -75,7 +75,7 @@ def get_filelist(start_dir, recurse, ext=None):
     Generate list of files, optionally recursive, optionally filtered on extension
     """
 
-    egg_re = compile(r"^.*\.egg$")
+    egg_re = re.compile(r"^.*\.egg$")
 
     def is_egg_dir(dirname):
         return egg_re.match(dirname)
