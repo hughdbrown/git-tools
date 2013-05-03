@@ -83,7 +83,7 @@ def git_commit(fullpath, comment, dryrun, verbose, author=None):
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
         _, errors = p.communicate()
         if p.returncode:
-            error("Error in {0}".format(fullpath), 'red')
+            error("Error in {0}".format(fullpath))
             raise Exception(errors)
 
 
