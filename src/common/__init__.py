@@ -16,11 +16,12 @@ from termcolor import cprint
 BUFSIZE = 16 * 1024 * 1024
 
 
-def message(msg, fcolor='green', bcolor=None):
+def message(msg, fcolor='green', bcolor=None, attrs=None):
     """
     General message printer
     """
-    cprint(msg, fcolor, bcolor, file=sys.stderr)
+    attrs = attrs or []
+    cprint(msg, fcolor, bcolor, attrs=attrs, file=sys.stderr)
 
 
 def error(msg):
@@ -30,11 +31,18 @@ def error(msg):
     message(msg, fcolor='red', bcolor='on_yellow')
 
 
+def header(msg):
+    """
+    General info printer
+    """
+    message(msg, fcolor='yellow', attrs=["bold"])
+
+
 def info(msg):
     """
     General info printer
     """
-    message(msg, fcolor='green')
+    message(msg, fcolor='green', attrs=["bold"])
 
 
 def binary_in_path(binary):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from src.common import (
-    error, info,
+    error, info, header,
     sha1_file,
     get_filelist,
     test_for_required_binaries,
@@ -96,7 +96,7 @@ ERRORS = [
 
 def loop_params(file_list):
     for i, (error_no, error_comment) in enumerate(ERRORS, start=1):
-        info("{2} of {3}: {0} {1}".format(
+        header("{2} of {3}: {0} {1}".format(
             error_no, error_comment, i, len(ERRORS)))
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
