@@ -19,8 +19,7 @@ ERRORS = [
     ("W293", "blank line contains whitespace"),
     ("W191", "indentation contains tabs"),
     ("E101", "indentation contains mixed spaces and tabs"),
-    # Never seen this rule applied
-    # ("E111", "Reindent all lines."),
+    ("E111", "Reindent all lines."),
 
     # Line spacing
     ("E301", "expected 1 blank line, found 0"),
