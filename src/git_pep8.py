@@ -94,21 +94,22 @@ ERRORS = [
 ]
 
 
-def loop_params(file_list):
-    for i, (error_no, error_comment) in enumerate(ERRORS, start=1):
+def loop_params(file_list, errors):
+    for i, (error_no, error_comment) in enumerate(errors, start=1):
         header("{2} of {3}: {0} {1}".format(
-            error_no, error_comment, i, len(ERRORS)))
+            error_no, error_comment, i, len(errors)))
         for fullpath in file_list:
             hash_before = sha1_file(fullpath)
             yield (fullpath, hash_before, error_no, error_comment)
 
 
 def run_autopep8(file_or_directory, ext=".py", recurse=True,
-                 dryrun=False, verbose=False, autopep8=None, author=None):
+                 dryrun=False, verbose=False, autopep8=None, author=None,
+                 errors=None):
     autopep8 = autopep8 or "autopep8"
     file_list = get_filelist(file_or_directory, recurse, ext)
     i = 0
-    for fullpath, hash_before, error_no, error_comment in loop_params(file_list):
+    for fullpath, hash_before, error_no, error_comment in loop_params(file_list, errors):
         cmd = [autopep8, "--in-place", "--verbose",
                "--select={0}".format(error_no), fullpath]
         if verbose or dryrun:
@@ -161,12 +162,23 @@ def option_parser():
                     default="autopep8", help='Specify path to autopep8 instance'),
         make_option('-u', '--author', dest='author',
                     action='store', help='Change git author'),
+        make_option('-s', '--select', dest='errors', default=None,
+                    action='store', help='Select specific errors'),
         make_option('-m', '--method', dest='method',
                     default=METHODS[0],
                     action='store',
                     help='Method of traversing errors and files to use with autopep8'),
     ]
     return OptionParser(option_list=option_list)
+
+
+def make_error_list(opt_errors, default_errors):
+    d = {k: v for k, v in default_errors}
+    return (
+        default_errors
+        if not opt_errors
+        else [(error, d[error]) for error in opt_errors.split(',')]
+    )
 
 
 def main():
@@ -182,6 +194,8 @@ def main():
     ]
     test_for_required_binaries(needed_binaries)
 
+    errors = make_error_list(o.errors, ERRORS)
+
     # Do the business
     method_fn = METHOD_TABLE.get(o.method)
     if method_fn:
@@ -191,7 +205,8 @@ def main():
                 ext=o.extensions, recurse=o.recurse,
                 dryrun=o.dryrun, verbose=o.verbose,
                 autopep8=o.autopep8,
-                author=o.author
+                author=o.author,
+                errors=errors
             )
     else:
         fmt = "'{0}' is not a valid value for --method.  Valid ones are: {1}"
