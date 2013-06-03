@@ -103,11 +103,11 @@ def loop_params(file_list, errors):
             yield (fullpath, error_no, error_comment)
 
 
-def run_autopep8(file_or_directory, ext=".py", recurse=True,
+def run_autopep8(file_or_directory, recurse=True,
                  dryrun=False, verbose=False, autopep8=None, author=None,
                  errors=None):
     autopep8 = autopep8 or "autopep8"
-    file_list = get_filelist(file_or_directory, recurse, ext)
+    file_list = get_filelist(file_or_directory, recurse)
     i = 0
     for fullpath, error_no, error_comment in loop_params(file_list, errors):
         cmd = [autopep8, "--in-place", "--verbose",
@@ -129,17 +129,19 @@ def run_autopep8(file_or_directory, ext=".py", recurse=True,
     info("# {0} files scanned/modified".format(i))
 
 
-def run_by_file_only(file_or_directory, ext=".py", recurse=True,
+def run_by_file_only(file_or_directory, recurse=True,
                      dryrun=False, verbose=False, autopep8=None, author=None,
                      errors=None):
-    # pylint-defeating assignment...
-    errors = errors
-
     autopep8 = autopep8 or "autopep8"
-    file_list = get_filelist(file_or_directory, recurse, ext)
+    select_opt = (
+        ["--select={0}".format(",".join(errors))]
+        if errors != ERRORS
+        else []
+    )
+    file_list = get_filelist(file_or_directory, recurse)
     i = 0
     for fullpath in file_list:
-        cmd = [autopep8, "--in-place", "--verbose", fullpath]
+        cmd = [autopep8, "--in-place", "--verbose"] + select_opt + [fullpath]
         if verbose or dryrun:
             info(" ".join(cmd))
         if not dryrun:
@@ -157,16 +159,42 @@ def run_by_file_only(file_or_directory, ext=".py", recurse=True,
     info("# {0} files scanned/modified".format(i))
 
 
-def run_all(file_or_directory, ext=".py", recurse=True,
+def run_by_reason_only(file_or_directory, recurse=True,
+                       dryrun=False, verbose=False, autopep8=None, author=None,
+                       errors=None):
+    autopep8 = autopep8 or "autopep8"
+    recurse_opt = ["--recursive"] if recurse else []
+    i = 0
+    for error_no, description in errors:
+        options = ["--in-place", "--verbose", "--select={0}".format(error_no)] + recurse_opt
+        cmd = [autopep8] + options + [file_or_directory]
+
+        if verbose or dryrun:
+            info(" ".join(cmd))
+        if not dryrun:
+            output = run_command(cmd)
+            # I can't tell if autopep8 has modified a file from the return code,
+            # so I do it the hard way...
+            info(output)
+            git_commit(
+                file_or_directory,
+                "autopep8 {0} {1}".format(error_no, description),
+                dryrun, verbose, author,
+                eat_errors=True)
+            i += 1
+    info("# {0} files scanned/modified".format(i))
+
+
+def run_all(file_or_directory, recurse=True,
             dryrun=False, verbose=False, autopep8=None, author=None,
             errors=None):
-    # pylint-defeating assignment...
-    ext = ext
-
     autopep8 = autopep8 or "autopep8"
-    recurse_opt = ["--recurse"] if recurse else []
-    select_opt = ["--select={0}".format(",".join(
-        errors))] if errors != ERRORS else []
+    recurse_opt = ["--recursive"] if recurse else []
+    select_opt = (
+        ["--select={0}".format(",".join(errors))]
+        if errors != ERRORS
+        else []
+    )
     options = recurse_opt + select_opt + ["--in-place", "--verbose"]
     cmd = [autopep8] + options + [file_or_directory]
 
@@ -178,7 +206,8 @@ def run_all(file_or_directory, ext=".py", recurse=True,
         git_commit(
             file_or_directory,
             "autopep8 run on all {0}".format(file_or_directory),
-            dryrun, verbose, author)
+            dryrun, verbose, author,
+            eat_errors=True)
 
 
 METHODS = (
@@ -195,13 +224,13 @@ METHODS = (
 METHOD_TABLE = {
     METHODS[0]: run_autopep8,
     METHODS[1]: run_by_file_only,
-    METHODS[2]: run_autopep8,
+    METHODS[2]: run_by_reason_only,
     METHODS[3]: run_all,
 }
 
 
 def option_parser():
-    from optparse import OptionParser, make_option
+    from optparse import OptionParser, make_option, IndentedHelpFormatter
 
     help_fmt = (
         'Method of traversing errors and files to use with autopep8; '
@@ -212,8 +241,6 @@ def option_parser():
     option_list = [
         make_option('-r', '--recurse', dest='recurse', action='store_true',
                     default=False, help='Recurse down directories from STARTDIR'),
-        make_option('-e', '--ext', dest='extensions', action='store',
-                    default=".py", help='Specify file extension to work on'),
         make_option('-d', '--dryrun', dest='dryrun', action='store_true',
                     default=False, help='Do dry run -- do not modify files'),
         make_option('-v', '--verbose', dest='verbose',
@@ -231,7 +258,9 @@ def option_parser():
                     help=help_fmt.format(", ".join(METHODS), METHODS[0])),
     ]
 
-    return OptionParser(option_list=option_list)
+    return OptionParser(
+        option_list=option_list,
+        formatter=IndentedHelpFormatter(width=60))
 
 
 def make_error_list(opt_errors, default_errors):
@@ -264,8 +293,9 @@ def main():
         for arg in (args or ["."]):
             method_fn(
                 arg,
-                ext=o.extensions, recurse=o.recurse,
-                dryrun=o.dryrun, verbose=o.verbose,
+                recurse=o.recurse,
+                dryrun=o.dryrun,
+                verbose=o.verbose,
                 autopep8=o.autopep8,
                 author=o.author,
                 errors=errors

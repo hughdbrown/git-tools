@@ -55,7 +55,7 @@ def sha1_file(filename):
         return sha1(f.read()).hexdigest()
 
 
-def git_commit(fullpath, comment, dryrun, verbose, author=None):
+def git_commit(fullpath, comment, dryrun, verbose, author=None, eat_errors=False):
     """
     Execute git-commit command
     """
@@ -72,12 +72,12 @@ def git_commit(fullpath, comment, dryrun, verbose, author=None):
         for cmd in (add_cmd, commit_cmd):
             p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
             _, errors = p.communicate()
-            if p.returncode:
+            if p.returncode and not eat_errors:
                 error("Error in {0}".format(fullpath))
                 raise Exception(errors)
 
 
-def get_filelist(file_or_directory, recurse, ext=None):
+def get_filelist(file_or_directory, recurse, ext='.py'):
     """
     Generate list of files, optionally recursive, optionally filtered on extension
     """
@@ -118,6 +118,7 @@ def get_filelist(file_or_directory, recurse, ext=None):
 
 
 def run_command(cmd):
+    message(" ".join(cmd), 'blue')
     p = Popen(cmd, stdout=PIPE, stderr=STDOUT, bufsize=BUFSIZE)
     output, errors = p.communicate()
     if p.returncode:
