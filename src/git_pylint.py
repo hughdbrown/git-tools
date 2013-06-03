@@ -12,7 +12,7 @@ from src.common import (
 BUFSIZE = 16 * 1024 * 1024
 
 ERRORS = [
-    ("LINT1", "Description"),
+    ("W0102", "Dangerous default value [] as argument"),
 ]
 
 
