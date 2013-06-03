@@ -203,6 +203,12 @@ METHOD_TABLE = {
 def option_parser():
     from optparse import OptionParser, make_option
 
+    help_fmt = (
+        'Method of traversing errors and files to use with autopep8; '
+        'choose from: {0}; '
+        'default is {1}'
+    )
+
     option_list = [
         make_option('-r', '--recurse', dest='recurse', action='store_true',
                     default=False, help='Recurse down directories from STARTDIR'),
@@ -222,7 +228,7 @@ def option_parser():
                     default=METHODS[0],
                     type="choice",
                     choices=METHODS,
-                    help='Method of traversing errors and files to use with autopep8; choose from: {0}'.format(", ".join(METHODS))),
+                    help=help_fmt.format(", ".join(METHODS), METHODS[0])),
     ]
 
     return OptionParser(option_list=option_list)
