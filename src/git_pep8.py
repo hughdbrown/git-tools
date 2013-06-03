@@ -176,7 +176,7 @@ def make_error_list(opt_errors, default_errors):
     return (
         default_errors
         if not opt_errors
-        else [(error, d[error]) for error in opt_errors.split(',')]
+        else [(opt_error, d[opt_error]) for opt_error in opt_errors.split(',')]
     )
 
 
