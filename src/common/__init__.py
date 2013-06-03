@@ -10,39 +10,13 @@ import os.path
 from subprocess import Popen, PIPE, STDOUT
 import re
 
-from termcolor import cprint
+
+from src.common.messages import (
+    error, info, message, header
+)
 
 
 BUFSIZE = 16 * 1024 * 1024
-
-
-def message(msg, fcolor='green', bcolor=None, attrs=None):
-    """
-    General message printer
-    """
-    attrs = attrs or []
-    cprint(msg, fcolor, bcolor, attrs=attrs, file=sys.stderr)
-
-
-def error(msg):
-    """
-    General error printer
-    """
-    message(msg, fcolor='red', bcolor='on_yellow')
-
-
-def header(msg):
-    """
-    General info printer
-    """
-    message(msg, fcolor='yellow', attrs=["bold"])
-
-
-def info(msg):
-    """
-    General info printer
-    """
-    message(msg, fcolor='green', attrs=["bold"])
 
 
 def binary_in_path(binary):
@@ -51,7 +25,10 @@ def binary_in_path(binary):
     # Join binary onto path component
     path_iter = (os.path.join(path, binary) for path in paths)
     # Expand any ~ and environment variables
-    expanded_path_iter = (os.path.expandvars(os.path.expanduser(p)) for p in path_iter)
+    expanded_path_iter = (
+        os.path.expandvars(os.path.expanduser(p))
+        for p in path_iter
+    )
     # See if any of these possible files exists
     return any(os.path.exists(p) for p in expanded_path_iter)
 
@@ -65,7 +42,8 @@ def test_for_required_binaries(needed_binaries):
     if not all(found_binary for _, found_binary in found):
         error("Certain additional binaries are required to run:")
         for binary, found_binary in found:
-            error("\t{0}: {1}".format(binary, "Found" if found_binary else "Not found"))
+            error("\t{0}: {1}".format(
+                binary, "Found" if found_binary else "Not found"))
         sys.exit(1)
 
 
@@ -81,18 +59,22 @@ def git_commit(fullpath, comment, dryrun, verbose, author=None):
     """
     Execute git-commit command
     """
-    cmd = ["git", "commit", fullpath, "-m", "{0}: {1}".format(fullpath, comment)]
+    add_cmd = ["git", "add", fullpath]
+    commit_cmd = ["git", "commit", "-m",
+                  "'{0}: {1}'".format(fullpath, comment)]
     if author:
-        cmd += ["--author", author]
+        commit_cmd += ["--author", author]
 
     if dryrun or verbose:
-        message(" ".join(cmd), 'blue')
+        message(" ".join(add_cmd), 'blue')
+        message(" ".join(commit_cmd), 'blue')
     if not dryrun:
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
-        _, errors = p.communicate()
-        if p.returncode:
-            error("Error in {0}".format(fullpath))
-            raise Exception(errors)
+        for cmd in (add_cmd, commit_cmd):
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
+            _, errors = p.communicate()
+            if p.returncode:
+                error("Error in {0}".format(fullpath))
+                raise Exception(errors)
 
 
 def get_filelist(file_or_directory, recurse, ext=None):
@@ -120,11 +102,17 @@ def get_filelist(file_or_directory, recurse, ext=None):
         ]
 
     # Filter out files that do not match on file extension
-    ext_filter = (path for path in file_list if ext is None or os.path.splitext(path)[1] == ext)
-    # Filter out directories that are egg directories
+    ext_filter = (
+        path for path in file_list
+        if ext is None or os.path.splitext(path)[1] == ext
+    )
 
+    # Filter out directories that are egg directories
     # Unlikely that they are part of the git repo
-    egg_filter = (path for path in ext_filter if not any(is_egg_dir(p) for p in path.split("/")))
+    egg_filter = (
+        path for path in ext_filter
+        if not any(is_egg_dir(p) for p in path.split("/"))
+    )
 
     return list(egg_filter)
 
@@ -139,7 +127,7 @@ def run_command(cmd):
 
 
 __all__ = [
-    "message", "info", "error",
+    "message", "info", "error", "header",
     "sha1_file",
     "test_for_required_binaries",
     "git_commit",

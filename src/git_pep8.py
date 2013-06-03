@@ -84,9 +84,11 @@ ERRORS = [
     # I don't like these rules because autopep8 does not really give good
     # transformations
     ("E122", "Add absent indentation for hanging indentation"),
-    ("E123", "closing bracket does not match indentation of opening bracket's line"),
+    ("E123",
+     "closing bracket does not match indentation of opening bracket's line"),
     ("E124", "closing bracket does not match visual indentation"),
-    ("E125", "continuation line does not distinguish itself from next logical line"),
+    ("E125",
+     "continuation line does not distinguish itself from next logical line"),
     ("E126", "continuation line over-indented for hanging indent"),
     ("E127", "continuation line over-indented for visual indent"),
     ("E128", "continuation line under-indented for visual indent"),
@@ -98,8 +100,7 @@ def loop_params(file_list, errors):
         header("{2} of {3}: {0} {1}".format(
             error_no, error_comment, i, len(errors)))
         for fullpath in file_list:
-            hash_before = sha1_file(fullpath)
-            yield (fullpath, hash_before, error_no, error_comment)
+            yield (fullpath, error_no, error_comment)
 
 
 def run_autopep8(file_or_directory, ext=".py", recurse=True,
@@ -108,12 +109,13 @@ def run_autopep8(file_or_directory, ext=".py", recurse=True,
     autopep8 = autopep8 or "autopep8"
     file_list = get_filelist(file_or_directory, recurse, ext)
     i = 0
-    for fullpath, hash_before, error_no, error_comment in loop_params(file_list, errors):
+    for fullpath, error_no, error_comment in loop_params(file_list, errors):
         cmd = [autopep8, "--in-place", "--verbose",
                "--select={0}".format(error_no), fullpath]
         if verbose or dryrun:
             info(" ".join(cmd))
         if not dryrun:
+            hash_before = sha1_file(fullpath)
             output = run_command(cmd)
             if hash_before != sha1_file(fullpath):
                 # I can't tell if autopep8 has modified a file from the return code,
@@ -125,6 +127,59 @@ def run_autopep8(file_or_directory, ext=".py", recurse=True,
                     dryrun, verbose, author)
                 i += 1
     info("# {0} files scanned/modified".format(i))
+
+
+def run_by_file_only(file_or_directory, ext=".py", recurse=True,
+                     dryrun=False, verbose=False, autopep8=None, author=None,
+                     errors=None):
+    # pylint-defeating assignment...
+    errors = errors
+
+    autopep8 = autopep8 or "autopep8"
+    file_list = get_filelist(file_or_directory, recurse, ext)
+    i = 0
+    for fullpath in file_list:
+        cmd = [autopep8, "--in-place", "--verbose", fullpath]
+        if verbose or dryrun:
+            info(" ".join(cmd))
+        if not dryrun:
+            hash_before = sha1_file(fullpath)
+            output = run_command(cmd)
+            if hash_before != sha1_file(fullpath):
+                # I can't tell if autopep8 has modified a file from the return code,
+                # so I do it the hard way...
+                info(output)
+                git_commit(
+                    fullpath,
+                    "autopep8 all errors",
+                    dryrun, verbose, author)
+                i += 1
+    info("# {0} files scanned/modified".format(i))
+
+
+def run_all(file_or_directory, ext=".py", recurse=True,
+            dryrun=False, verbose=False, autopep8=None, author=None,
+            errors=None):
+    # pylint-defeating assignment...
+    ext = ext
+
+    autopep8 = autopep8 or "autopep8"
+    recurse_opt = ["--recurse"] if recurse else []
+    select_opt = ["--select={0}".format(",".join(
+        errors))] if errors != ERRORS else []
+    options = recurse_opt + select_opt + ["--in-place", "--verbose"]
+    cmd = [autopep8] + options + [file_or_directory]
+
+    if verbose or dryrun:
+        info(" ".join(cmd))
+    if not dryrun:
+        output = run_command(cmd)
+        info(output)
+        git_commit(
+            file_or_directory,
+            "autopep8 run on all {0}".format(file_or_directory),
+            dryrun, verbose, author)
+
 
 METHODS = (
     # Iterate over each file and reason, running autopep8
@@ -139,9 +194,9 @@ METHODS = (
 
 METHOD_TABLE = {
     METHODS[0]: run_autopep8,
-    METHODS[1]: run_autopep8,
+    METHODS[1]: run_by_file_only,
     METHODS[2]: run_autopep8,
-    METHODS[3]: run_autopep8,
+    METHODS[3]: run_all,
 }
 
 
@@ -165,9 +220,11 @@ def option_parser():
                     action='store', help='Select specific errors'),
         make_option('-m', '--method', dest='method',
                     default=METHODS[0],
-                    action='store',
-                    help='Method of traversing errors and files to use with autopep8'),
+                    type="choice",
+                    choices=METHODS,
+                    help='Method of traversing errors and files to use with autopep8; choose from: {0}'.format(", ".join(METHODS))),
     ]
+
     return OptionParser(option_list=option_list)
 
 
