@@ -172,7 +172,7 @@ def option_parser():
 
 
 def make_error_list(opt_errors, default_errors):
-    d = {k: v for k, v in default_errors}
+    d = dict((k, v) for k, v in default_errors)
     return (
         default_errors
         if not opt_errors
