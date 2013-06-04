@@ -44,5 +44,31 @@ Attribute all changes applied to the user pep8
 The default is `by-file-and-reason`. Many developers find this produces too many commits to examine. It does have the advantage that
 it is easy to examine a commit and see the scope of the change and the reason given for the change.
 
+#### Try it out
+This script creates four branches, one for each method of running `git-pep8`.
+Try it out to see which set of commits works best for you.
+
+``` bash
+git checkout master
+git branch -D all
+git checkout -b all
+git-pep8 -r -v -m all src/
+
+git checkout master
+git branch -D by-file-and-reason
+git checkout -b by-file-and-reason
+git-pep8 -r -v -m by-file-and-reason src/
+
+git checkout master
+git branch -D by-file-only
+git checkout -b by-file-only
+git-pep8 -r -v -m by-file-only src/
+
+git checkout master
+git branch -D by-reason-only
+git checkout -b by-reason-only
+git-pep8 -r -v -m by-reason-only src/
+```
+
 ## Contact
 * hughdbrown@yahoo.com
