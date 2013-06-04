@@ -3,7 +3,8 @@ language: python
 python:
     - "2.7"
     - "2.6"
-    - "pypy"
+# GitPython -> smmap -> sys.getrefcount = not available in pypy
+#    - "pypy"
 # Don't understand why python 3.3 build is failing
 #    - "3.3"
 
