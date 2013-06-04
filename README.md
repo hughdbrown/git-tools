@@ -14,7 +14,10 @@ Use `python setup.py install --user`
 
 ## Documentation
 * `git-pep8`
-Iterates over all the python files in a repository and applies pep8 fixes. Each file/error code pair is committed separately. Author for the commit is taken from git config or the `--author` command line option.
+Iterates over all the python files in a repository and applies pep8 fixes.
+The frequency of commit ranges from every file/error pair to once per run.
+Automatic commit comment describes contents of change.
+Author for the commit is taken from git config or the `--author` command line option.
 
 ## Typical usage
 ### `git-pep8`
