@@ -64,6 +64,7 @@ ERRORS = [
     # Multiple imports
     ("E401", "multiple imports on one line"),
 
+    # autopep8's E501 fixes are pretty clunky
     # ("E501", "Try to make lines fit within --max-line-length characters."),
     ("E502", "the backslash is redundant between brackets"),
     ("W601", ".has_key() is deprecated, use 'in'"),
