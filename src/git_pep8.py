@@ -75,8 +75,7 @@ ERRORS = [
     ("E711", "comparison to None should be 'if cond is None:'"),
     ("E712", "comparison to True should be 'if cond is True:' or 'if cond:'"),
 
-    # Never seen this rule applied to code.
-    # ("E721", "Switch to use isinstance()."),
+    ("E721", "Switch to use isinstance()."),
 
     # Indentation
     ("E121", "continuation line indentation is not a multiple of four"),
