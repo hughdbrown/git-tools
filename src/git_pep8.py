@@ -1,11 +1,11 @@
 #!/usr/bin/env python
+import git
+
 from src.common import (
     error, info, header,
-    sha1_file,
     get_filelist,
     test_for_required_binaries,
     run_command,
-    git_commit,
 )
 
 
@@ -101,111 +101,105 @@ def loop_params(file_list, errors):
             yield (fullpath, error_no, error_comment)
 
 
-def run_autopep8(file_or_directory, recurse=True,
-                 dryrun=False, verbose=False, autopep8=None, author=None,
+def run_autopep8(repo,
+                 file_or_directory, recurse=True,
+                 dryrun=False, verbose=False, autopep8=None,
                  errors=None):
-    autopep8 = autopep8 or "autopep8"
+    verbose_opt = ["--verbose"] if verbose else []
+    autopep8_cmd = [autopep8 or "autopep8", "--in-place"] + verbose_opt
+
     file_list = get_filelist(file_or_directory, recurse)
     i = 0
     for fullpath, error_no, error_comment in loop_params(file_list, errors):
-        cmd = [autopep8, "--in-place", "--verbose",
-               "--select={0}".format(error_no), fullpath]
+        cmd = autopep8_cmd + ["--select={0}".format(error_no), fullpath]
         if verbose or dryrun:
             info(" ".join(cmd))
         if not dryrun:
-            hash_before = sha1_file(fullpath)
             output = run_command(cmd)
-            if hash_before != sha1_file(fullpath):
-                # I can't tell if autopep8 has modified a file from the return code,
-                # so I do it the hard way...
+            if repo.is_dirty():
                 info(output)
-                git_commit(
-                    fullpath,
-                    "{0} {1}".format(error_no, error_comment),
-                    dryrun, verbose, author)
+                msg = "{0}: {1} {2}".format(fullpath, error_no, error_comment)
+                repo.index.add([fullpath])
+                repo.index.commit(msg)
                 i += 1
     info("# {0} files scanned/modified".format(i))
 
 
-def run_by_file_only(file_or_directory, recurse=True,
-                     dryrun=False, verbose=False, autopep8=None, author=None,
+def run_by_file_only(repo,
+                     file_or_directory, recurse=True,
+                     dryrun=False, verbose=False, autopep8=None,
                      errors=None):
-    autopep8 = autopep8 or "autopep8"
     select_opt = (
         ["--select={0}".format(",".join(errors))]
         if errors != ERRORS
         else []
     )
+    verbose_opt = ["--verbose"] if verbose else []
+    autopep8_cmd = [autopep8 or "autopep8", "--in-place"] + verbose_opt + select_opt
+
     file_list = get_filelist(file_or_directory, recurse)
     i = 0
     for fullpath in file_list:
-        cmd = [autopep8, "--in-place", "--verbose"] + select_opt + [fullpath]
+        cmd = autopep8_cmd + [fullpath]
         if verbose or dryrun:
             info(" ".join(cmd))
         if not dryrun:
-            hash_before = sha1_file(fullpath)
             output = run_command(cmd)
-            if hash_before != sha1_file(fullpath):
-                # I can't tell if autopep8 has modified a file from the return code,
-                # so I do it the hard way...
+            if repo.is_dirty():
                 info(output)
-                git_commit(
-                    fullpath,
-                    "autopep8 all errors",
-                    dryrun, verbose, author)
+                msg = "{0}: pep8 all errors".format(fullpath)
+                repo.index.add([fullpath])
+                repo.index.commit(msg)
                 i += 1
     info("# {0} files scanned/modified".format(i))
 
 
-def run_by_reason_only(file_or_directory, recurse=True,
-                       dryrun=False, verbose=False, autopep8=None, author=None,
+def run_by_reason_only(repo,
+                       file_or_directory, recurse=True,
+                       dryrun=False, verbose=False, autopep8=None,
                        errors=None):
-    autopep8 = autopep8 or "autopep8"
     recurse_opt = ["--recursive"] if recurse else []
+    verbose_opt = ["--verbose"] if verbose else []
+    autopep8_cmd = [autopep8 or "autopep8", "--in-place"] + verbose_opt + recurse_opt
+
     i = 0
     for error_no, description in errors:
-        options = ["--in-place", "--verbose", "--select={0}".format(error_no)] + recurse_opt
-        cmd = [autopep8] + options + [file_or_directory]
+        cmd = autopep8_cmd + ["--select={0}".format(error_no), file_or_directory]
 
         if verbose or dryrun:
             info(" ".join(cmd))
         if not dryrun:
             output = run_command(cmd)
-            # I can't tell if autopep8 has modified a file from the return code,
-            # so I do it the hard way...
-            info(output)
-            git_commit(
-                file_or_directory,
-                "autopep8 {0} {1}".format(error_no, description),
-                dryrun, verbose, author,
-                eat_errors=True)
-            i += 1
+            if repo.is_dirty():
+                info(output)
+                msg = "{0}: {1} {2}".format(file_or_directory, error_no, description)
+                repo.index.add([file_or_directory])
+                repo.index.commit(msg)
+                i += 1
     info("# {0} files scanned/modified".format(i))
 
 
-def run_all(file_or_directory, recurse=True,
-            dryrun=False, verbose=False, autopep8=None, author=None,
+def run_all(repo,
+            file_or_directory, recurse=True,
+            dryrun=False, verbose=False, autopep8=None,
             errors=None):
-    autopep8 = autopep8 or "autopep8"
     recurse_opt = ["--recursive"] if recurse else []
     select_opt = (
         ["--select={0}".format(",".join(errors))]
         if errors != ERRORS
         else []
     )
-    options = recurse_opt + select_opt + ["--in-place", "--verbose"]
-    cmd = [autopep8] + options + [file_or_directory]
+    cmd = [autopep8 or "autopep8"] + recurse_opt + select_opt + ["--in-place", "--verbose", file_or_directory]
 
     if verbose or dryrun:
         info(" ".join(cmd))
     if not dryrun:
         output = run_command(cmd)
-        info(output)
-        git_commit(
-            file_or_directory,
-            "autopep8 run on all {0}".format(file_or_directory),
-            dryrun, verbose, author,
-            eat_errors=True)
+        if repo.is_dirty():
+            info(output)
+            msg = "autopep8 run on all {0}".format(file_or_directory)
+            repo.index.add([file_or_directory])
+            repo.index.commit(msg)
 
 
 METHODS = (
@@ -245,8 +239,6 @@ def option_parser():
                     action='store_true', default=False, help='Verbose output'),
         make_option('-a', '--autopep8', dest='autopep8', action='store',
                     default="autopep8", help='Specify path to autopep8 instance'),
-        make_option('-u', '--author', dest='author',
-                    action='store', help='Change git author'),
         make_option('-s', '--select', dest='errors', default=None,
                     action='store', help='Select specific errors'),
         make_option('-m', '--method', dest='method',
@@ -288,14 +280,15 @@ def main():
     # Do the business
     method_fn = METHOD_TABLE.get(o.method)
     if method_fn:
+        repo = git.Repo(".")
         for arg in (args or ["."]):
             method_fn(
+                repo,
                 arg,
                 recurse=o.recurse,
                 dryrun=o.dryrun,
                 verbose=o.verbose,
                 autopep8=o.autopep8,
-                author=o.author,
                 errors=errors
             )
     else:

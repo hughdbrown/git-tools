@@ -3,7 +3,6 @@ Shared functions for git-tools
 """
 from __future__ import print_function
 
-from hashlib import sha1
 import sys
 import os
 import os.path
@@ -45,36 +44,6 @@ def test_for_required_binaries(needed_binaries):
             error("\t{0}: {1}".format(
                 binary, "Found" if found_binary else "Not found"))
         sys.exit(1)
-
-
-def sha1_file(filename):
-    """
-    Generate the sha1 hash for a file
-    """
-    with open(filename) as f:
-        return sha1(f.read()).hexdigest()
-
-
-def git_commit(fullpath, comment, dryrun, verbose, author=None, eat_errors=False):
-    """
-    Execute git-commit command
-    """
-    add_cmd = ["git", "add", fullpath]
-    commit_cmd = ["git", "commit", "-m",
-                  "'{0}: {1}'".format(fullpath, comment)]
-    if author:
-        commit_cmd += ["--author", author]
-
-    if dryrun or verbose:
-        message(" ".join(add_cmd), 'blue')
-        message(" ".join(commit_cmd), 'blue')
-    if not dryrun:
-        for cmd in (add_cmd, commit_cmd):
-            p = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=BUFSIZE)
-            _, errors = p.communicate()
-            if p.returncode and not eat_errors:
-                error("Error in {0}".format(fullpath))
-                raise Exception(errors)
 
 
 def get_filelist(file_or_directory, recurse, ext='.py'):
@@ -129,9 +98,7 @@ def run_command(cmd):
 
 __all__ = [
     "message", "info", "error", "header",
-    "sha1_file",
     "test_for_required_binaries",
-    "git_commit",
     "get_filelist",
     "run_command",
 ]
