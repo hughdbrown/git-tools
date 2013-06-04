@@ -8,8 +8,11 @@ git-tools - A package of tools for working with git repositories
 
 ### Installation
 * Install to `/usr/local/bin`
+
 Use `sudo python setup.py install`
+
 * Install to `~/.local/bin`
+
 Use `python setup.py install --user`
 
 ## Documentation
@@ -21,12 +24,14 @@ Author for the commit is taken from git config or the `--author` command line op
 
 ## Typical usage
 ### `git-pep8`
-* git-pep8 -r
+* `git-pep8 -r`
 Apply `autopep8` down a source tree, starting from the current directory
-* git-pep8 --author=pep8
-Attribute all changes applied to the user pep8
-* git-pep8 --recurse ~/workspace/git-tools/src
+
+* `git-pep8 --recurse ~/workspace/git-tools/src`
 Apply `autopep8` down a source tree, starting from STARTDIR
+
+* `git-pep8 --author=pep8`
+Attribute all changes applied to the user pep8
 
 ## Four modes of operation
 1. all: checks for all errors over all files and commits to git once
