@@ -25,15 +25,18 @@ Author for the commit is taken from git config or the `--author` command line op
 ## Typical usage
 ### `git-pep8`
 * `git-pep8 -r`
+
 Apply `autopep8` down a source tree, starting from the current directory
 
 * `git-pep8 --recurse ~/workspace/git-tools/src`
+
 Apply `autopep8` down a source tree, starting from STARTDIR
 
 * `git-pep8 --author=pep8`
+
 Attribute all changes applied to the user pep8
 
-## Four modes of operation
+#### Four modes of operation
 1. all: checks for all errors over all files and commits to git once
 2. by-file-only: iterate over files applying all errors at once, one commit per file
 3. by reason-only: iterate over error types applying to all files at once, one commit per error type
