@@ -189,7 +189,8 @@ def run_all(repo,
         if errors != ERRORS
         else []
     )
-    cmd = [autopep8 or "autopep8"] + recurse_opt + select_opt + ["--in-place", "--verbose", file_or_directory]
+    verbose_opt = ["--verbose"] if verbose else []
+    cmd = [autopep8 or "autopep8", "--in-place"] + verbose_opt + recurse_opt + select_opt + [file_or_directory]
 
     if verbose or dryrun:
         info(" ".join(cmd))
