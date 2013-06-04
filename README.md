@@ -7,10 +7,10 @@ git-tools - A package of tools for working with git repositories
 * Needs to have `git`, `autopep8`, and `pep8`.
 
 ### Installation
-* Install to /usr/local/bin
-sudo python setup.py install
-* Install to ~/.local/bin
-python setup.py install --user
+* Install to `/usr/local/bin`
+Use `sudo python setup.py install`
+* Install to `~/.local/bin`
+Use `python setup.py install --user`
 
 ## Documentation
 * `git-pep8`
